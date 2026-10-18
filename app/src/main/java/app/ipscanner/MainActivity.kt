@@ -241,6 +241,24 @@ class Bridge(private val act: MainActivity) {
                 act.copy(a.getString("text"))
                 JSONObject().put("ok", true).toString()
             }
+            "socks4" -> probe(
+                Engine.socks4(
+                    a.getString("host"), a.getInt("port"), a.optString("user", ""),
+                    a.optBoolean("https", true), a.optString("target", Engine.DEFAULT_TARGET), samples, timeout
+                )
+            )
+            "vpn" -> {
+                val list = ArrayList<String>(Engine.vpnLocal())
+                try {
+                    val cm = act.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+                    val net = cm.activeNetwork
+                    val caps = if (net != null) cm.getNetworkCapabilities(net) else null
+                    if (caps != null && caps.hasTransport(android.net.NetworkCapabilities.TRANSPORT_VPN)) list.add("transport")
+                } catch (_: Exception) {
+                }
+                if (!System.getProperty("http.proxyHost").isNullOrEmpty()) list.add("proxy-setting")
+                JSONObject().put("ok", true).put("reasons", JSONArray(list)).toString()
+            }
             "paste" -> {
                 var txt = ""
                 val l = java.util.concurrent.CountDownLatch(1)

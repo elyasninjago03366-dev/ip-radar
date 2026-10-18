@@ -126,7 +126,7 @@ tr.tp{box-shadow:inset 3px 0 0 var(--ac)}[dir=rtl] tr.tp{box-shadow:inset -3px 0
 .ft{text-align:center;color:var(--mu);font-size:13px;padding:22px 14px 90px;direction:rtl;font-family:Vazirmatn,Tahoma,sans-serif}.ft b{display:block;color:var(--tx);font-size:14.5px;font-weight:800}.ft small{display:block;font-size:10.5px;opacity:.65;margin-top:4px}
 input[type=checkbox]{accent-color:#c6f45b}
 [hidden]{display:none!important}
-.upd{position:fixed;inset:0;z-index:99999;background:rgba(5,8,5,.94);display:flex;align-items:center;justify-content:center;padding:20px}.upd .bx{position:relative;max-width:380px;width:100%;background:#111a0f;border:1px solid var(--ac);border-radius:18px;padding:26px 22px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.7)}.upd h2{margin:0 0 10px;font-size:19px;color:var(--ac)}.upd p{margin:0 0 20px;font-size:14px;line-height:1.8;color:var(--tx)}.upd .x{position:absolute;top:10px;inset-inline-end:10px;width:34px;height:34px;padding:0;border-radius:50%;background:rgba(255,255,255,.08);color:var(--tx);font-size:15px}.upd #updgo{width:100%;padding:13px;border:0;border-radius:12px;background:var(--ac);color:#0a0f0b;font-weight:800;font-size:15px;font-family:inherit;cursor:pointer}
+.upd{position:fixed;inset:0;z-index:99999;background:rgba(5,8,5,.94);display:flex;align-items:center;justify-content:center;padding:20px}.upd .bx{position:relative;max-width:380px;width:100%;background:#111a0f;border:1px solid var(--ac);border-radius:18px;padding:26px 22px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.7)}.upd h2{margin:0 0 10px;font-size:19px;color:var(--ac)}.upd p{margin:0 0 20px;font-size:14px;line-height:1.8;color:var(--tx)}.upd .x{position:absolute;top:10px;inset-inline-end:10px;width:34px;height:34px;padding:0;border-radius:50%;background:rgba(255,255,255,.08);color:var(--tx);font-size:15px}.upd #updgo,.upd #vpnok{width:100%;padding:13px;border:0;border-radius:12px;background:var(--ac);color:#0a0f0b;font-weight:800;font-size:15px;font-family:inherit;cursor:pointer}
 </style></head><body>
 <div class="bg" aria-hidden="true"><i></i><i></i><i></i></div>
 <div class="w" id="app">
@@ -209,6 +209,7 @@ input[type=checkbox]{accent-color:#c6f45b}
   <p class="m" id="note"></p>
 </div>
 <div class="upd" id="upd" hidden><div class="bx"><button class="x" id="updx" aria-label="Close">✕</button><h2 data-i="upd_t"></h2><p data-i="upd_m"></p><button id="updgo" data-i="upd_b"></button></div></div>
+<div class="upd" id="vpn" hidden style="z-index:99998"><div class="bx"><button class="x" id="vpnx" aria-label="Close">✕</button><h2 data-i="vpn_t"></h2><p data-i="vpn_m"></p><button id="vpnok" data-i="vpn_b"></button></div></div>
 <footer class="ft"><b>تیم میلی‌کانفیگ</b><small>ساخته‌شده با ❤️ توسط الیاسین اطمینان</small></footer>
 <div id="toast" class="toast"></div>
 <input id="fileList" type="file" hidden><input id="fileCfg" type="file" hidden>
@@ -590,9 +591,8 @@ async function browserProbe(it,o){
 async function probeMixed(it,o,b){
   const tries=it.proto?[it.proto]:['socks5','http'];let last={ok:false};
   for(const p of tries){
-    if(p==='socks4')return{ok:false,err:'socks4'};
     const a={...b,port:it.port,user:it.user,pass:it.pass};
-    const r=p.startsWith('socks')?await nat('socks5',{...a,https:o.https}):await nat('http',{...a,tunnel:p==='https'});
+    const r=p==='socks4'?await nat('socks4',{...a,https:o.https}):p.startsWith('socks')?await nat('socks5',{...a,https:o.https}):await nat('http',{...a,tunnel:p==='https'});
     if(r&&r.ok){r.proto=p;return r}last=r||last;
   }
   return last;
@@ -922,7 +922,7 @@ async function runDohTest(){
 $('dtest').onclick=runDohTest;
 try{$('dsrv').value=store.get('dsrv','');$('dn').value=store.get('dn','10')}catch(e){}
 I18N.en.kind_mixed='Proxy (all types together)';I18N.fa.kind_mixed='پروکسی (همه نوع با هم)';I18N.en.src_proxy='Proxy';I18N.fa.src_proxy='پروکسی';I18N.en.man_paste='Paste from clipboard';I18N.fa.man_paste='چسباندن از کلیپ‌بورد';I18N.en.man_nopaste='Clipboard is empty or not allowed — paste into the box instead';I18N.fa.man_nopaste='کلیپ‌بورد خالی است یا اجازه داده نشد — داخل کادر بچسبانید';
-I18N.en.m_mixed='Real delay (each proxy with its own prefix)';I18N.fa.m_mixed='تأخیر واقعی (هر پروکسی با پیشوند خودش)';I18N.en.n_mixed='socks5:// http:// https:// are all tested together, each one with its own prefix; without a prefix SOCKS5 then HTTP is tried. Copy keeps the prefix. SOCKS4 is not supported.';I18N.fa.n_mixed='socks5:// ،http:// و https:// همه با هم تست می‌شوند و هرکدام با پیشوند خودش؛ بدون پیشوند اول SOCKS5 بعد HTTP امتحان می‌شود. کپی با همان پیشوند است. SOCKS4 پشتیبانی نمی‌شود.';
+I18N.en.m_mixed='Real delay (each proxy with its own prefix)';I18N.fa.m_mixed='تأخیر واقعی (هر پروکسی با پیشوند خودش)';I18N.en.n_mixed='socks5:// socks4:// http:// https:// are all tested together, each one with its own prefix; without a prefix SOCKS5 then HTTP is tried. Copy keeps the prefix. SOCKS4 works too.';I18N.fa.n_mixed='socks5:// ،socks4:// ،http:// و https:// همه با هم تست می‌شوند و هرکدام با پیشوند خودش؛ بدون پیشوند اول SOCKS5 بعد HTTP امتحان می‌شود. کپی با همان پیشوند است. SOCKS4 هم پشتیبانی می‌شود.';
 I18N.en.all_isp='All operators / ISPs';I18N.fa.all_isp='همه اپراتورها';
 I18N.en.dsrv_lbl='Your own DoH servers (optional, one https:// link per line)';I18N.en.dsrv_n='How many built-in servers';I18N.en.dsrv_go='Add & test DoH servers';I18N.en.dsrv_hint='Adds that many known public DoH servers (Iran-friendly ones first), plus yours, and measures the real response time of each. Copy the working ones.';
 I18N.fa.dsrv_lbl='سرورهای DoH خودتان (اختیاری، هر خط یک لینک https://)';I18N.fa.dsrv_n='چند سرور آماده';I18N.fa.dsrv_go='افزودن و تست سرورهای DoH';I18N.fa.dsrv_hint='به تعداد دلخواه سرور DoH عمومی (اول سرورهای مناسب ایران) به‌علاوه‌ی سرورهای شما اضافه می‌شود و زمان پاسخ واقعی هرکدام اندازه‌گیری می‌شود. سالم‌ها را کپی کنید.';
@@ -975,6 +975,35 @@ $('updx').onclick=closeUpd;
 $('upd').addEventListener('click',e=>{if(e.target===$('upd'))closeUpd()});
 addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('upd').hidden)closeUpd()});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkUpdate()});
+
+/* ------------------------------------------------------------------ VPN detection (never uses the system language) */
+let vpnClosed=false;
+async function detectVpn(){
+  const why=[];
+  if(NATIVE){try{const q=await nat('vpn',{});if(q&&q.ok)for(const x of q.reasons||[])why.push(x)}catch(e){}}
+  try{
+    const j=JSON.parse(await getText('http://ip-api.com/json/?fields=status,offset,proxy,hosting'));
+    if(j.status==='success'){
+      const dev=-new Date().getTimezoneOffset()*60;
+      if(typeof j.offset==='number'&&j.offset!==dev)why.push('clock');   // device clock/zone does not match where the IP is
+      if(j.proxy)why.push('ip-proxy');
+    }
+  }catch(e){}
+  return why;
+}
+async function checkVpn(){
+  const why=await detectVpn();
+  window.__vpnWhy=why;
+  const el=$('vpn');
+  if(!why.length){el.hidden=true;return}
+  if(!vpnClosed&&$('upd').hidden)el.hidden=false;
+}
+const closeVpn=()=>{vpnClosed=true;$('vpn').hidden=true};
+$('vpnx').onclick=$('vpnok').onclick=closeVpn;
+$('vpn').addEventListener('click',e=>{if(e.target===$('vpn'))closeVpn()});
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)checkVpn()});
+I18N.en.vpn_t='VPN detected';I18N.en.vpn_m='You are using a VPN. For a better experience and accurate results, please turn it off.';I18N.en.vpn_b='OK';
+I18N.fa.vpn_t='وی‌پی‌ان شناسایی شد';I18N.fa.vpn_m='شما از وی‌پی‌ان استفاده می‌کنید. برای تجربه‌ی بهتر و نتایج دقیق‌تر آن را خاموش کنید.';I18N.fa.vpn_b='باشه';
 $('lang').onclick=()=>{lang=lang==='fa'?'en':'fa';store.set('lang',lang);applyLang(true)};
 
 function applyLang(anim){
@@ -1014,6 +1043,6 @@ function applyLang(anim){
   try{const au=store.get('aurl','');if(au)$('aurl').value=au;$('dtxt').value=store.get('dtxt','');$('dprov').value=store.get('dprov','cf');$('durl').value=store.get('durl','');$('durl').hidden=$('dprov').value!=='custom'}catch(e){}
   loadTab(saved);
   if(saved==='range')openRange();else if(saved==='manual')openManual();else if(saved==='api')openApi();else if(saved==='doh')openDoh();else loadSource(SRC[saved]&&saved!=='custom'?saved:'zeus');
-  checkUpdate();
+  checkUpdate();checkVpn();
 })();
 </script></body></html>

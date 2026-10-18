@@ -136,6 +136,13 @@ private fun dispatch(m: String, a: Map<String, Any?>): String {
                 a.bool("https", true), a.str("target", Engine.DEFAULT_TARGET), samples, timeout
             )
         )
+        "socks4" -> probeJson(
+            Engine.socks4(
+                a.str("host"), a.int("port", 1080), a.str("user"),
+                a.bool("https", true), a.str("target", Engine.DEFAULT_TARGET), samples, timeout
+            )
+        )
+        "vpn" -> "{\"ok\":true,\"reasons\":[" + Engine.vpnLocal().joinToString(",") { Json.quote(it) } + "]}"
         "http" -> probeJson(
             Engine.httpProxy(
                 a.str("host"), a.int("port", 8080), a.str("user"), a.str("pass"),

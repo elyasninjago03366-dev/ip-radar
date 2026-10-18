@@ -335,6 +335,65 @@ object Engine {
         }
     }
 
+    /** Real delay through a SOCKS4 / SOCKS4a proxy (no password, optional user id). */
+    fun socks4(
+        host: String, port: Int, user: String, https: Boolean,
+        target: String, samples: Int, timeoutMs: Int
+    ): Probe = aggregate(samples) {
+        val reached = BooleanArray(1)
+        try {
+            socks4Once(host, port, user, https, target, timeoutMs, reached)
+        } catch (e: Exception) {
+            if (!reached[0] || target != DEFAULT_TARGET) throw e
+            try {
+                socks4Once(host, port, user, false, "cp.cloudflare.com", timeoutMs, reached)
+            } catch (_: Exception) {
+                throw e
+            }
+        }
+    }
+
+    private fun socks4Once(
+        host: String, port: Int, user: String, https: Boolean,
+        target: String, timeoutMs: Int, reached: BooleanArray
+    ): Attempt {
+        val t0 = System.nanoTime()
+        val deadline = t0 + timeoutMs * 1_000_000L
+        val s = dial(host, port, deadline)
+        reached[0] = true
+        try {
+            val connect = msSince(t0)
+            val out = s.getOutputStream()
+            val dport = if (https) 443 else 80
+            // SOCKS4 needs an IPv4 address; fall back to the SOCKS4a form (domain name) when it cannot be resolved here.
+            val ip4 = try {
+                java.net.InetAddress.getAllByName(target).firstOrNull { it is java.net.Inet4Address }?.address
+            } catch (_: Exception) { null }
+            val uid = user.toByteArray(Charsets.UTF_8)
+            val bo = java.io.ByteArrayOutputStream()
+            bo.write(4); bo.write(1)
+            bo.write(dport shr 8); bo.write(dport and 0xFF)
+            if (ip4 != null) bo.write(ip4) else bo.write(byteArrayOf(0, 0, 0, 1))
+            bo.write(uid); bo.write(0)
+            if (ip4 == null) { bo.write(target.toByteArray(Charsets.US_ASCII)); bo.write(0) }
+            out.write(bo.toByteArray())
+            out.flush()
+            val r = readExact(s, 8, deadline)
+            if (r[0].toInt() != 0) throw ProbeError("not-socks4")
+            val code = r[1].toInt() and 0xFF
+            if (code != 90) throw ProbeError("socks4-err-$code")
+            if (https) {
+                val ts = tls(s, target, deadline)
+                get204(ts, target, deadline)
+            } else {
+                get204(s, target, deadline)
+            }
+            return Attempt(connect, msSince(t0))
+        } finally {
+            try { s.close() } catch (_: Exception) {}
+        }
+    }
+
     private fun socks5Once(
         host: String, port: Int, user: String, pass: String,
         https: Boolean, target: String, timeoutMs: Int, reached: BooleanArray
@@ -475,6 +534,30 @@ object Engine {
     }
 
     /** Country codes for IPs: one batch request per 100 IPs, then single lookups for the leftovers. */
+    /** Local signs of an active VPN: tunnel-like network interfaces that are up. Works on Android and Windows. */
+    fun vpnLocal(): List<String> {
+        val out = ArrayList<String>()
+        try {
+            val en = java.net.NetworkInterface.getNetworkInterfaces() ?: return out
+            while (en.hasMoreElements()) {
+                val ni = en.nextElement()
+                val up = try { ni.isUp && !ni.isLoopback } catch (_: Exception) { false }
+                if (!up) continue
+                val n = ni.name.lowercase()
+                val d = (ni.displayName ?: "").lowercase()
+                val tun = Regex("^(tun|tap|ppp|pptp|wg|ipsec|utun|nordlynx|proton|tailscale)[0-9]*$").matches(n) ||
+                    n.startsWith("tun") || n.startsWith("ppp") || n.startsWith("wg") || n.startsWith("ipsec")
+                val win = listOf(
+                    "tap-windows", "openvpn", "wireguard", "wintun", "nordlynx", "vpn", "anyconnect",
+                    "fortinet", "tunnelbear", "proton", "surfshark", "expressvpn", "mullvad", "tailscale"
+                ).any { d.contains(it) }
+                if (tun || win) out.add("iface:" + ni.name)
+            }
+        } catch (_: Exception) {
+        }
+        return out
+    }
+
     fun geo(ips: List<String>): Map<String, String> {
         val out = HashMap<String, String>()
         val ok = Regex("^[0-9A-Fa-f:.]{3,45}$")
