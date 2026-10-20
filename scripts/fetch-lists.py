@@ -11,7 +11,7 @@ L = {
  "edt_http": RAW + "EDT-Pages/Proxy-List/main/data/http.txt",
  "edt_https": RAW + "EDT-Pages/Proxy-List/main/data/https.txt",
 }
-MAXL = 8000
+MAXL = 60000
 old = {}
 try:
     old = json.loads(re.search(r"=(\{.*\});?\s*$", open(OUT, encoding="utf-8").read(), re.S).group(1))

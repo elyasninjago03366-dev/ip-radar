@@ -3,7 +3,6 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23c6f45b%27 stroke-width=%272%27 stroke-linecap=%27round%27%3E%3Crect x=%270%27 y=%270%27 width=%2724%27 height=%2724%27 rx=%276%27 fill=%27%230a0f0b%27 stroke=%27none%27/%3E%3Ccircle cx=%2712%27 cy=%2712%27 r=%278%27/%3E%3Ccircle cx=%2712%27 cy=%2712%27 r=%274%27/%3E%3Cpath d=%27M12 12 18 6%27/%3E%3C/svg%3E">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<script src="bundled.js"></script>
 <title>IP Scanner</title>
 <style>
 :root{--bg:#0a0f0b;--pn:#0c130f;--pn2:#0e1612;--ln:#1c2a20;--tx:#eef4e8;--mu:#7f9086;--ac:#c6f45b;--ac2:#a6d63c;--bad:#ff6b6b;--warn:#f5b84b;--glow:rgba(198,244,91,.22)}
@@ -160,6 +159,18 @@ tr.new{animation:rowin .5s cubic-bezier(.2,.9,.25,1)}
 #fxc{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:100000}
 html[data-fx=off] *,html[data-fx=off] *::before,html[data-fx=off] *::after{animation:none!important;transition:none!important}
 html[data-fx=off] #fxc{display:none}
+
+/* ---- performance pass: nothing heavy while scrolling or typing ---- */
+.bg{display:none}
+body{background:radial-gradient(900px 520px at 8% -4%,rgba(198,244,91,.10),transparent 62%),radial-gradient(800px 520px at 100% 100%,rgba(79,122,26,.12),transparent 62%),var(--bg)}
+.logo::after{mix-blend-mode:normal;opacity:.4}
+.scanning#scan{animation:none}
+button.p::after{display:none}#go::after{display:block}
+@media(hover:none){.c::before{display:none}}
+.c,.hd,.tb,.tw{animation-fill-mode:backwards}
+[id$=box]:not([hidden]){animation-fill-mode:backwards}
+.c{transition:border-color .25s}
+.tw{contain:content}
 </style></head><body>
 <div class="bg" aria-hidden="true"><i></i><i></i><i></i></div>
 <div class="w" id="app">
@@ -523,6 +534,7 @@ async function loadSource(key,force){
   if(tok!==S.loadTok)return;
   let items=text?parseList(text,S.kind):[];
   if(items.length){setItems(items,'st_online');return}
+  await new Promise(res=>{if(window.BUNDLED)return res();const sc=document.createElement('script');sc.src='bundled.js';sc.onload=sc.onerror=()=>res();document.head.appendChild(sc)});
   const bt=(window.BUNDLED||{})[key];
   if(bt){const bi=parseList(bt,S.kind);if(bi.length){setItems(bi,'st_builtin');$('lmsg').textContent=t('load_fail')+' · '+t('loaded',{n:bi.length.toLocaleString()});return}}
   if(S.kind==='ip'){setItems(parseList(SAMPLE_IPS,'ip'),'st_offline');$('lmsg').textContent=t('load_fail')+' · '+t('loaded',{n:S.items.length});return}
@@ -823,7 +835,7 @@ $('method').onchange=()=>{updateNote();store.set('method',$('method').value)};
 $('sni').onchange=()=>store.set('sni',$('sni').value);
 $('https').onchange=()=>store.set('https',$('https').checked?'1':'0');
 $('rand').onchange=()=>store.set('rand',$('rand').checked?'1':'0');
-$('cfg').oninput=parseCfgs;
+let _pc=0;$('cfg').oninput=()=>{clearTimeout(_pc);_pc=setTimeout(parseCfgs,300)};
 $('imp').onclick=()=>$('fileCfg').click();
 $('fileCfg').onchange=async e=>{const f=e.target.files[0];if(!f)return;const x=await f.text();$('cfg').value=($('cfg').value.trim()+'\n'+x).trim();parseCfgs();e.target.value=''};
 $('cfile').onclick=()=>{window.__mfile=0;$('fileList').click()};
@@ -1137,8 +1149,8 @@ function applyLang(anim){
   for(const id of IDS){const el=document.getElementById(id);if(!el)continue;
     const w=document.createElement('div');w.className='cw';el.parentNode.insertBefore(w,el);w.appendChild(el);
     const b=document.createElement('button');b.type='button';b.className='clr';w.appendChild(b);b.onclick=()=>clearBox(el);btns.push([el,b])}
-  function refresh(){for(const [el,b] of btns){b.textContent=(lang==='fa'?'پاک کردن ✕':'Clear ✕');b.style.display=(el.value&&!el.hidden)?'block':'none'}}
-  document.addEventListener('input',refresh,true);setInterval(refresh,700);refresh();
+  function refresh(){for(const [el,b] of btns){b.textContent=(lang==='fa'?'پاک کردن ✕':'Clear ✕');b.style.display=el.hidden?'none':'block'}}
+  setInterval(refresh,1500);refresh();
 })();
 </script>
 </body></html>
